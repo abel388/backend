@@ -1,0 +1,90 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
+  password         String?
+  name             String?
+  lastName         String?
+  cedula           String?          @unique
+  birthDate        DateTime?
+  phone            String?
+  position         String?          // cargo
+  googleId         String?
+  profileComplete  Boolean          @default(false)
+  roleId           Int?
+  role             Role?            @relation(fields: [roleId], references: [id])
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdTickets   Ticket[]         @relation("CreatedTickets")
+  ticketReplies    TicketReply[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique   // admin, empleado, supervisor, etc.
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique   // dashboard:view, users:manage, stats:view, etc.
+  description String?
+  module      String           // dashboard, users, stats, settings, profile
+  action      String           // view, create, edit, delete, manage
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Ticket {
+  id          Int           @id @default(autoincrement())
+  subject     String
+  status      String        @default("open")       // open, in-progress, resolved, closed
+  priority    String        @default("normal")      // low, normal, high
+  creatorId   Int
+  creator     User          @relation("CreatedTickets", fields: [creatorId], references: [id], onDelete: Cascade)
+  replies     TicketReply[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TicketReply {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  isStaff   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([authorId])
+}
