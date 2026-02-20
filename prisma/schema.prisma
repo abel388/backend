@@ -29,6 +29,19 @@ model User {
   updatedAt        DateTime         @updatedAt
 }
 
+
+model Cliente {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String
+  phone          String
+  birthDate      DateTime
+  country        String
+  documentType   String
+  documentNumber String
+  createdAt      DateTime @default(now())
+}
+
 model Role {
   id          Int              @id @default(autoincrement())
   name        String           @unique   // admin, empleado, supervisor, etc.
